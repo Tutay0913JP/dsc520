@@ -72,6 +72,7 @@ weekdays1_mean > weekdays2_mean
 
 ## Determine how many days in week 1 had over 8 hours of sleep using the `>` operator
 week1_sleep>8
+sum(week1_sleep>8) #Added this to add true which is 1 (sleep over 8 hours)
 
 ## Create a matrix from the following three vectors
 student01 <- c(100.0, 87.1)
