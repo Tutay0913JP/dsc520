@@ -1,0 +1,132 @@
+---
+html_document: default
+title: "ASSIGNMENT 7"
+author: "Janine Par"
+date: '2022-04-30'
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+
+```{r echo=FALSE}
+library(ggplot2)
+theme_set(theme_minimal())
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+## Load the `data/student-surver.csv
+studentsurvey_df <- read.csv("data/student-survey.csv")
+studentsurvey_df
+
+#Use R to calculate the covariance of the Survey variables and provide an explanation of why you would use this calculation and what the results indicate.
+
+#Covariance of Survey Variables
+cov(studentsurvey_df)
+```
+
+**Covariance** is used to measure the average relationship between two variables. Calculating covariance is a good way to verify if variables are related to each other and to see if changes on one variable are similar in the other variable.
+
+1. Positive Covariance indicates that as one variable deviates from the mean and the other deviates in the same direction.
+1. Negative Covariance indicates one variable deviates from the mean the other deviates from the opposite direction
+
+
+#Examine the Survey data variables. #What measurement is being used for the variables? 
+#Explain what effect changing the measurement being used for the variables would have on the covariance calculation. 
+#Would this be a problem? Explain and provide a better alternative if needed.
+
+```{r}
+str(studentsurvey_df)
+```
+The following variables are in the student survey dataframe:
+
+- TimeReading is a continuous ratio variable which is an integer and assumed to be time spent by student reading in hours 
+
+- TimeTV  is a continuous ratio variable which is an integer and assumed to be time spent by student watching TV  in minutes 
+
+- Happiness is a continuous ratio variable  which is a number and assumed to be percentage rate of student happiness
+ 
+- Gender is a categorical binary variable which is an integer representing Male and Female
+
+The two variables:TimeReading and TimeTV seem to have a different scale which could be a problem when comparing because of covariance of dependence on the measurement scale. Better alternative is to standardize the variables to same unit.
+
+
+#Choose the type of correlation test to perform, explain why you chose this test, and make a prediction if the test yields a positive or negative correlation?
+
+I and doing a two pearson correlation test to see if there are linear correlation between: 
+
+1. TimeReading and Happiness
+
+1. TimeTV and Happiness. 
+
+I am more entertained watching tv so my prediction is that the TimeTV and Happiness will yield to positive correlation 
+
+```{r}
+cor.test(studentsurvey_df$TimeReading, studentsurvey_df$Happiness,method = "pearson")
+cor.test(studentsurvey_df$TimeTV, studentsurvey_df$Happiness,method = "pearson")
+#Check scatter plot
+ggplot(studentsurvey_df, aes(x=TimeTV, y=Happiness))+geom_point(color="darkblue")+stat_smooth(method=lm, se=FALSE, color="red")
+
+ggplot(studentsurvey_df, aes(x=TimeReading, y=Happiness))+geom_point(color="darkblue")+stat_smooth(method=lm, se=FALSE, color="red")
+
+
+```
+  
+
+#Perform a correlation analysis of:
+
+
+```{r}
+#All variables
+cor(studentsurvey_df)
+
+#All Continous variable correlation
+cor(studentsurvey_df[,c("TimeReading", "TimeTV","Happiness")])
+
+#A single correlation between two a pair of the variables
+cor.test(studentsurvey_df$TimeTV, studentsurvey_df$Happiness,method = "pearson")
+
+#Repeat your correlation test in step 2 but set the confidence interval at 99%
+cor.test(studentsurvey_df$TimeTV, studentsurvey_df$Happiness, method = "pearson",conf.level = 0.99)
+
+```
+
+#Describe what the calculations in the correlation matrix suggest about the relationship between the variables. Be specific with your explanation.
+
+**The pearson correlation coefficient of 0.636556 indicate positive association between TimeTv and Happiness which means that student spending more time watching TV have greater percentage rate happiness. The r=.636556 indicate a large effect because it is greater than .50. The p-value = 0.03521 which is considered statistically significant. **
+
+#Calculate the correlation coefficient and the coefficient of determination, describe what you conclude about the results.
+```{r}
+#correlation coefficient
+cor (studentsurvey_df)
+
+#Coefficient of determination
+cor(studentsurvey_df)^2
+```
+**As determined above that there is a positive correlation between the Time spent watching TV and Happiness but the coefficient of determination only shows .405(40.5%) of the variability in happiness is explained by or shared by the Time spent watching TV but there is 59.5% of variance that can explain by other factors.**
+
+#Based on your analysis can you say that watching more TV caused students to read less? Explain.
+
+**Correlation between t=Time Reading and Time TV is showing negative correlation which means that  as the Time watching TV increases the Time spent Reading decreases. The coefficient of determination also shows that .7789(78%) of variability is shared by the two variable and only 22% of variable are from other factors.** 
+
+
+#Pick three variables and perform a partial correlation, documenting which variable you are “controlling”. Explain how this changes your interpretation and explanation of the results.
+```{r}
+
+library(ppcor)
+
+pcor(studentsurvey_df)
+
+#TimeTv and Happiness while controlling Gender
+pcor.test(studentsurvey_df$TimeTV, studentsurvey_df$Happiness, studentsurvey_df$Gender)
+
+```
+**I have picked TimeTV and Happiness varibles while the controlling variable is Gender. I noticed that the partial correlation between TimeTV and Happiness is 0.6311611 which is close to the correlation when the effect of Gender is not controlled (r=0.636556) however the p-value when Gender is controlled increases to 0.06832112 which mean that is less statistically significant compare to when effect of Gender is not controlled(p-value = 0.03521) which is considered to be statistically significant since it's value is <.05 **
