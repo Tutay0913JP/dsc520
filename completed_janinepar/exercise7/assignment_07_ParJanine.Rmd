@@ -115,7 +115,7 @@ cor(studentsurvey_df)^2
 
 #Based on your analysis can you say that watching more TV caused students to read less? Explain.
 
-**Correlation between t=Time Reading and Time TV is showing negative correlation which means that  as the Time watching TV increases the Time spent Reading decreases. The coefficient of determination also shows that .7789(78%) of variability is shared by the two variable and only 22% of variable are from other factors.** 
+**Correlation between Time Reading and Time TV is showing negative correlation which means that  as the Time watching TV increases the Time spent Reading decreases. The coefficient of determination also shows that .7789(78%) of variability is shared by the two variable and only 22% of variable are from other factors.** 
 
 
 #Pick three variables and perform a partial correlation, documenting which variable you are “controlling”. Explain how this changes your interpretation and explanation of the results.
