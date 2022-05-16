@@ -16,10 +16,11 @@ For this project, my goal is to understand and correlate multiple variables that
 
 # Research questions
 
-1. Identify the current statistics on homelessness in America and focus on the Top state with homeless population.
-1. Compare these variables between states with highest and lowest homeless population
-1. Identify factors and variables that influence the decline in homelessness population
-1. What are the main factors and variables that influence the increase of homelessness?
+1. What is the current population survey and statistics on homelessness in America? 
+1. What are the variables between states with highest and lowest homeless population which shows +/- trend that seem to have an impact to the state homelessness population? 
+1. What are the  factors and variables that influence the decline in homelessness population?
+1. What are the  factors and variables that influence the increase of homelessness?
+1. Are current government programs and initiative shows effectiveness in reducing and resolving homelessness crisis
 
 
 # Approach and How your approach addresses (fully or partially) the problem.
