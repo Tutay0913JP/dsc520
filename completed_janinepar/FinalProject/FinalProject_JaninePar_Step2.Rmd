@@ -15,6 +15,7 @@ library (car)
 library(dplyr)
 library(caTools)
 library(tidyverse)
+library(knitr)
 
 options(scipen=5)
 
@@ -23,14 +24,14 @@ theme_set(theme_minimal())
 
 # Importing and Cleasing of Data
 
-The different datasets gathered for Homeless data analysis were downloaded in excel (xlxs) and csv format. The following were applied to the data sources:
+The different datasets gathered for Homeless data analysis were downloaded in excel (xlxs) and csv format. The following steps were applied to the data sources:
 
 **2021 AHAR: Part 1 - PIT Estimates of Homelessness in the U.S.**
 2007-2021-PIT-Counts-by-State
 
-- The structure of the spreadsheet have Point In Time homeless information for each year separated in every sheet
-- I have created a loop that will read through the Sheet of the years that I'm interested (2017-2022). Each Iteration will append to the new dataframe for PIT Homeless information
-- Part of the loop is identifying the year where I created a constant variable of 'year'. The value is assigned is based from the excel sheet where the data is is extracted from.
+- The structure of the spreadsheet have Point In Time homeless information for each year separated in every excel sheet
+- I have created a loop that will read through each Sheet (years) that I'm interested (2017-2022). Each Iteration will append to the new dataframe for PIT Homeless information
+- Part of the loop is identifying the year where I created a constant variable of 'year'. The value is assigned is based from the excel sheet where the data is extracted from.
 
 
 ```{r PIT_estimate }
@@ -61,8 +62,8 @@ head (pit_homeless_df)
 2007-2021-HIC-Counts-by-State
 
 - Similar with the PIT information. The structure of the spreadsheet have HIC data information for each year separated in every sheet
-- I have created a loop that will read through the Sheet of the years that I'm interested (2017-2022). Each Iteration will append to the new dataframe for HIC Homeless information
-- Part of the loop is identifying the year where I created a constant variable of 'year'. The value is assigned is based from the excel sheet where the data is is extracted from.
+- I have created a loop that will read through each Sheet (years) that I'm interested (2017-2022). Each Iteration will append to the new dataframe for HIC Homeless information
+- Part of the loop is identifying the year where I created a constant variable of 'year'. The value is assigned is based from the excel sheet where the data is extracted from.
 
 
 ```{r HIC }
@@ -85,7 +86,7 @@ head (hic_homeless_df)
 ```
 
 ** Merging HUD Exchange Data
-Because of Similarity of datas tructure where data is by State and year. I have merged the information to have one raw HUD dataset (homeless_df) with data elements from 
+Because of Similarity of data structure where data is by State and year. I have merged the information to have one raw HUD dataset (homeless_df) with data elements from: 
 
 1. **2021 AHAR: Part 1 - PIT Estimates of Homelessness in the U.S.**
 2007-2021-PIT-Counts-by-State
@@ -93,7 +94,7 @@ Because of Similarity of datas tructure where data is by State and year. I have 
 2. **The accompanying Housing Inventory Count (HIC) data **
 2007-2021-HIC-Counts-by-State
 
-This raw data includes PIT and HIC information from HUD exchange for a State and Year (for this research, the scope is 2017-2020)
+This raw data includes PIT and HIC information from HUD exchange for a State and Year (The scope is 2017-2020 for this research)
 
 ```{r HomelessRaw }
 homeless_df <- merge(pit_homeless_df, hic_homeless_df , by=c("year", "State"))
@@ -102,14 +103,13 @@ homeless_df %>% select(State,year,Number_of_CoCs,Total_PIT_Homeless, Total_Age_1
                        Total_Transgender,Total_GenderNonConform,Total_NonHisp,Total_White,Total_Asian, Total_Hawaiian, Total_AfricanAmerican
                        ,Total_AmericanIndian,S_ES_Multiple_Races,TOTAL_YEAR_BED, TOTAL_YEAR_BED_ES, TOTAL_YEAR_BED_TH, TOTAL_YEAR_BED_SH) -> homeless_df
 
-colnames(homeless_df)
 head (homeless_df)
 
 ```
 
 
 **USA FACTS https://usafacts.org/**
-This website includes public statistic is collected multiple agencies including US Census and for this analysis, I have gathered the following information for the year 2017 -2020 (when available):
+This website includes public statistic information collectedby  multiple agencies including US Census and for this analysis, I have gathered the following for the year 2017 -2020 (when available):
 
 1. US Population by State
 1. Employment by State
@@ -117,9 +117,9 @@ This website includes public statistic is collected multiple agencies including 
 1. Percent of Adult with Depression  by State
 1. Violence and Crime Rate   by State
 
-- I have created a loop that will read through csv file and will capture the yearly information in column
+- I have created a loop that will read through each csv file and will capture the yearly information in column
 - Part of the loop is identifying the year where I created a constant variable of 'year'. The value is assigned is based from the "COLUMN" where the data is is extracted from.
-- While going to each file, the process append the dataset to usfacts_df to merge all information coming from USFACTS source
+- While going to each file, the process append to a dataframe usfacts_df to merge all information coming from USFACTS source
 
 
 ```{r USFACTSSURVEY }
@@ -151,8 +151,6 @@ rm(us_pop_df) #Cleanup raw data
 # Employment US Facts per state
 us_emp_df<- read.csv("data/homelessdata/employment_usafacts.csv")
 
-colnames(us_emp_df)
-
 #uspop_year <- c("2020","2019","2018","2017")
 
 us_emp_year_df <- data.frame()
@@ -177,8 +175,6 @@ usfacts_df <- merge(us_pop_year_df,us_emp_year_df, by =c("year", "State"))
 # poverty US Facts per state
 us_poverty_df<- read.csv("data/homelessdata/people_in_poverty_usafacts.csv")
 
-colnames(us_poverty_df)
-
 us_poverty_year_df <- data.frame()
 
 for (year in uspop_year)
@@ -201,8 +197,6 @@ usfacts_df <- merge(usfacts_df,us_poverty_year_df, by =c("year", "State"))
 # Depression
 us_meddepresspct_df<- read.csv("data/homelessdata/percent_of_adults_with_depression_usafacts.csv")
 
-colnames(us_meddepresspct_df)
-
 us_meddepresspct_year_df <- data.frame()
 
 for (year in uspop_year)
@@ -220,8 +214,6 @@ rm (us_meddepresspct_df) #clean-up raw data
 
 usfacts_df <- merge(usfacts_df,us_meddepresspct_year_df, by =c("year", "State"))
 
-
-colnames(us_meddepresspct_year_df)
 
 # Violence and Crime
 us_violencecrime_df<- read.csv("data/homelessdata/violent_crimes_usafacts.csv")
@@ -254,7 +246,7 @@ usfacts_df <- merge(usfacts_df,us_violencecrime_year_df, by =c("year", "State"))
 This dataset contains Fair Market Rents (FMRs) for each state. 
 
 - I have extracted the excel spreadsheet per state and created a loop to read data for each yearly spreadsheet. 
-- I created a constant variable year and assign a value based on the year the data came from
+- I created a constant variable year and assign a value based on the file the data came from.
 - While going to each file, the process append the dataset to usfacts_df to merge this information with the USFACTS dataframe
 
 ```{r}
@@ -297,29 +289,28 @@ head(state_ave_weather_df)
 
 usfacts_df <- merge(usfacts_df,state_ave_weather_df, by =c("State"))
 
-head(usfacts_df)
-
-
 ```
 
 *** To create the Final data, I have merged the homeless_df with the HUD Exchange Information specific on homelessness and  usafacts_df with state information that I believe can factor homelessness. Data is breakdown per State and Year.
 
 - This information can be sliced to use Top state with homelessness or look at it in General population (all state)
 - We can look at a specific year information within the period of 2017 - 2020
-- I would like to look more on the homelessness demographic information but the challenge is that information is not available in public or may require permission to obtain which make sense because of the confidentiality of the information. This limit this analysis to not include identifying Person Risk factors to homelessness or being chronic homeless
+- I would like to look more on the homelessness demographic information but the challenge is that information is not available in public or may require permission to obtain which make sense because of the confidentiality of personal identifiable information. This limit this analysis and will not include identifying Person Risk factors to homelessness or being chronic homeless.
 
 
 ```{r Summary }
 us_homeless_df <- merge(homeless_df,usfacts_df, by =c("year", "State"))
 
-head(us_homeless_df, n=200)
+head(us_homeless_df, n=100)
+
+#kable(usfacts_df, caption="US Homeless Data 2017 - 2020")
 
 #New Variables
 us_homeless_df$homeless_pop_ratio<- us_homeless_df$Total_PIT_Homeless/us_homeless_df$Population
 
 ```
 
-The following scatter plots are generated to identify relationship between the PIT Homeless count with the different factors
+The following scatter plots are generated to identify relationship of the different USFACTS variables with the PIT Homeless count.
 
 ```{r Plots }
 #ggplot(us_homeless_df, aes(homeless_pop_ratio)) + geom_histogram(bins = 10, aes(y = ..density..)) + ggtitle("PIT Homeless to population Survey 2017 - 2019")+ #xlab("Population and Homeless Ratio") +  ylab("Frequency")
@@ -332,13 +323,13 @@ ggplot(data=us_homeless_df, aes(x=Population, y=Total_PIT_Homeless)) + geom_poin
 
 ggplot(data=us_homeless_df, aes(x=Poverty, y=Total_PIT_Homeless)) + geom_point() + geom_smooth(method="lm", alpha=0.1, fill="Blue")   + ggtitle("State PIT Homeless and Poverty Survey 2017 - 2019")
 
-ggplot(data=us_homeless_df, aes(x=DepressPCT, y=Total_PIT_Homeless)) + geom_point() + geom_smooth(method="lm", alpha=0.1, fill="Blue") + ggtitle("State PIT Homeless and Rate of population Depress PCT Survey 2017 - 2019")
+ggplot(data=us_homeless_df, aes(x=DepressPCT, y=Total_PIT_Homeless)) + geom_point() + geom_smooth(method="lm", alpha=0.1, fill="Blue") + ggtitle("State PIT Homeless and Rate of people with Depression Survey 2017 - 2019")
 
 ggplot(data=us_homeless_df, aes(x=CrimeViolence, y=Total_PIT_Homeless)) + geom_point() + geom_smooth(method="lm", alpha=0.1, fill="Blue") + ggtitle("State PIT Homeless and CrimeViolence 2017 - 2019")
 
 ggplot(data=us_homeless_df, aes(x=Employment, y=Total_PIT_Homeless)) + geom_point() + geom_smooth(method="lm", alpha=0.1, fill="Blue")  + ggtitle("State PIT Homeless and Employment Rate 2017 - 2019")
 
-ggplot(data=us_homeless_df, aes(x=ave_f, y=Total_PIT_Homeless) ) + geom_point() + geom_smooth(method="lm") + ggtitle("State PIT Homeless and Average State Weather 2017 - 2019")
+ggplot(data=us_homeless_df, aes(x=ave_f, y=Total_PIT_Homeless) ) + geom_point() + geom_smooth(method="lm") + ggtitle("State PIT Homeless and Average State Temp 2021")
 
 ggplot(data=us_homeless_df, aes(x=TOTAL_YEAR_BED, y=Total_PIT_Homeless) ) + geom_point() + geom_smooth(method="lm") + ggtitle("State PIT Homeless and Total Annual Bed/Service 2017 - 2019")
 
@@ -346,5 +337,5 @@ ggplot(data=us_homeless_df, aes(x=TOTAL_YEAR_BED, y=Total_PIT_Homeless) ) + geom
 
 **Questions for future steps and Do you plan on incorporating any machine learning techniques to answer your research questions? Explain.**
 
-- Next step is to run Correlation Analysis using these different variables with the Total PIT Homelessness. 
-- Data in the final dataset contains possible predictors that are quantitative continuous variable and the plot generated seem to indicate linear relationship with the TOTAL PIT Homelesness thus this can be used for multiple linear regression.   
+- Next step is to run Correlation Analysis using these different USFACTS variables with the Total PIT Homelessness and report the result. 
+- Data in the final dataset contains possible predictors that are quantitative continuous variables and the plot generated seem to indicate linear relationship with the TOTAL PIT Homelesness thus this can be used for generating a multiple linear regression model.   
