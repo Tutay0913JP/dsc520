@@ -165,7 +165,7 @@ for (year in uspop_year)
   us_emp_year_df <- rbind(us_emp_year_df,temp)
 }
 
-head(us_emp_year_df)
+tail(us_emp_year_df)
 rm(us_emp_df) #Cleanup Raw Data
 
 
@@ -187,7 +187,7 @@ for (year in uspop_year)
   us_poverty_year_df <- rbind(us_poverty_year_df,temp)
 }
 
-head(us_poverty_year_df)
+tail(us_poverty_year_df)
 rm(us_poverty_df) #clean up raw data
 
 
@@ -209,7 +209,7 @@ for (year in uspop_year)
   us_meddepresspct_year_df <- rbind(us_meddepresspct_year_df,temp)
 }
 
-head(us_meddepresspct_year_df)
+tail(us_meddepresspct_year_df)
 rm (us_meddepresspct_df) #clean-up raw data
 
 usfacts_df <- merge(usfacts_df,us_meddepresspct_year_df, by =c("year", "State"))
