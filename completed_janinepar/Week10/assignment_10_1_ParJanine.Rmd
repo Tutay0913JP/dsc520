@@ -1,0 +1,89 @@
+---
+title: "Week 10_1"
+author: "Janine Par"
+date: '2022-05-20'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60), tidy=TRUE)
+
+library(readxl)
+library(plyr)
+library(ggplot2)
+library (lm.beta)
+library (car)
+library(dplyr)
+library(caTools)
+```
+
+
+```{r thoraricsurgery }
+
+# a.For this problem, you will be working with the thoracic surgery data set from the University of California Irvine machine learning repository. This dataset contains information on life expectancy in lung cancer patients after surgery. The underlying thoracic surgery data is in ARFF format. This is a text-based format with information on each of the attributes. You can load this data using a package such as foreign or by cutting and pasting the data section into a CSV fil
+
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+
+## Load the `data/ThoraricSugery` to
+thoraricsurgery_df <- read.csv("data/ThoraricSurgery.arff", header=FALSE, comment.char = "@")
+
+names(thoraricsurgery_df) <- c("DGN","PRE4","PRE5","PRE6","PRE7","PRE8","PRE9","PRE10","PRE11","PRE14","PRE17","PRE19","PRE25","PRE30","PRE32","AGE","Risk1")
+
+str(thoraricsurgery_df)
+
+head (thoraricsurgery_df)
+
+
+```
+
+```{r logisticRegression}
+#b.Assignment Instructions:
+
+#i. Fit a binary logistic regression model to the data set that predicts whether or not the patient survived for one year (the Risk1Y variable) after the surgery. 
+#Use the glm() function to perform the logistic regression. See Generalized Linear Models for an example. Include a summary using the summary() function in your results.
+
+
+thoraricsurvice.model <- glm(Risk1~DGN+PRE4+PRE5+PRE6+PRE7+PRE8+PRE9+PRE10+PRE11+PRE14+PRE17+PRE19+PRE25+PRE30+PRE32+AGE, data=thoraricsurgery_df, family=binomial())
+
+summary (thoraricsurvice.model)
+```
+
+#ii According to the summary, which variables had the greatest effect on the survival rate?
+
+**According to the summary, these variables have P value < .05 indicating that they are statistically significant **
+
+1. PRE9TRUE     
+1. PRE14OC14    
+1. PRE17TRUE    
+1. PRE30TRUE    
+
+```{r accuracy, results='hide'}
+
+#iii To compute the accuracy of your model, use the dataset to predict the outcome variable. #The percent of correct predictions is the accuracy of your model. What is the accuracy of your model?
+
+#Split data
+tssplit <- sample.split(thoraricsurgery_df, SplitRatio = 0.8)
+
+tssplit_train <- subset(thoraricsurgery_df,tssplit='True')
+tssplit_train
+
+tssplit_test <- subset(thoraricsurgery_df,tssplit='False')
+tssplit_test
+
+#Predict 
+res.train <- predict(thoraricsurvice.model,tssplit_train,type ="response")
+res.train 
+
+res.test <- predict(thoraricsurvice.model,tssplit_test,type ="response")
+res.test 
+
+```
+
+```{r confusion matrix}
+confmatrix <- table(Actual_value=tssplit_train$Risk1, Predicted_Value= res.train > 0.5)
+
+(confmatrix [[1,1]] + confmatrix [[2,2]])/sum(confmatrix)
+```
+
+**Accuracy of the model is 83.6%**
