@@ -264,7 +264,7 @@ us_homeless_df %>% select (Total_PIT_Homeless, TOTAL_YEAR_BED, Population, homel
 
 4. Run r code to plot the variable and see relationship with the variables in a graph.
 
-5. Run r code and perform correlation analysis for top state with homelessness: CA, TX, NY, FL
+5. Run r code and perform correlation analysis
 
 ```{r Correlation Analysis, echo=FALSE}
 
