@@ -1,0 +1,226 @@
+---
+title: "Week11_12_Part1_Introduction to Machine Learning KNN"
+author: "Janine Par"
+date: '2022-05-31'
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(readxl)
+library(plyr)
+library(ggplot2)
+library (lm.beta)
+library (car)
+library(dplyr)
+library(caret)
+library(class)
+library(caTools)
+
+
+
+options(scipen=5)
+
+theme_set(theme_minimal())
+```
+
+```{r Load files and Normalize }
+
+#Fit a Logistic Regression Model
+
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+
+## Load the `data/binaryclassifierdata`
+binaryclass_df <- read.csv("data/binary-classifier-data.csv", header=TRUE, comment.char = "@")
+
+## Load the `data/Trinary Classifier Data`
+trinaryclass_df <- read.csv("data/trinary-classifier-data.csv", header=TRUE, comment.char = "@")
+
+str(binaryclass_df)
+
+str(trinaryclass_df)
+
+table(binaryclass_df$label)
+
+table(trinaryclass_df$label)
+
+#Plot the data from each dataset using a scatter plot.
+
+ggplot(binaryclass_df, aes(x=x, y=y, color=label)) + geom_point() + geom_smooth(method="lm")
+
+ggplot(trinaryclass_df, aes(x=x, y=y, color=label)) + geom_point() + geom_smooth(method="lm")
+
+normalize <- function(x)  {(x -min(x))/(max(x)-min(x))}
+
+binaryclass_df_n <- as.data.frame(lapply(binaryclass_df[2:3], normalize))  #Normalize X and Y 
+
+trinaryclass_df_n <- as.data.frame(lapply(trinaryclass_df[2:3], normalize))  #Normalize X and Y 
+
+```
+
+
+#Work on Binary Class datasets 
+
+
+```{r Binary Dataset}
+#Split data
+
+set.seed(1234)
+
+#Get random numbers for Training Data
+size <- floor(0.7*nrow(binaryclass_df))
+
+train_ind <- sample(seq_len(nrow(binaryclass_df)), size = size)
+
+bcsplit_train.label <- binaryclass_df[train_ind,1 ]
+
+bcsplit_test.label <- binaryclass_df[-train_ind,1 ]
+
+bcsplit_train <- binaryclass_df_n[train_ind,]
+
+bcsplit_test <- binaryclass_df_n[-train_ind,]
+
+bcsplit_predict <- knn(train = bcsplit_train,
+                       test=bcsplit_test,
+                       cl=bcsplit_train.label,
+                       k=round(sqrt(nrow(bcsplit_train)))) # K-32 initial run 
+
+acc_bcsplit_32 <- 100 * sum(bcsplit_test.label == bcsplit_predict)/NROW(bcsplit_test.label)
+
+#Confusion Matrix
+confmatrix <- table(Actual_value=bcsplit_test.label, Predicted_Value= bcsplit_predict)
+
+# Accuracy 
+(confmatrix [[1,1]] + confmatrix [[2,2]])/sum(confmatrix) * 100
+
+knn_val <- c(3,5,10,15,20,25)
+ 
+bcs_knn_model <- data.frame()
+
+i=1
+
+for (kv in knn_val)
+{
+  bcsplit_predict<- knn(train = bcsplit_train,
+                         test=bcsplit_test,
+                         cl=bcsplit_train.label,
+                         k=kv)
+
+  confmatrix <- table(Actual_value=bcsplit_test.label, Predicted_Value= bcsplit_predict)
+  kvaccuracy <-   100 * sum(bcsplit_test.label == bcsplit_predict)/NROW(bcsplit_test.label)  #((confmatrix [[1,1]] + confmatrix [[2,2]])/sum(confmatrix))*100
+  kvalue <- kv
+  bcs_knn_model <- rbind(bcs_knn_model, c(kvalue, kvaccuracy))
+  names(bcs_knn_model) <- c("Kvalue", "Accuracy")
+}
+
+#ggplot(data=bcs_knn_model, aes(x=kvalue, y=accuracy)) + geom_point() 
+
+plot(bcs_knn_model)
+
+# K value and Accuracy
+bcs_knn_model
+
+#Binary Class Linear Classifier from last week (week 10)
+  
+binaryclass.model <- glm(label~x+y, data=binaryclass_df, family=binomial())
+
+summary (binaryclass.model)
+
+bcsplit <- sample.split(binaryclass_df, SplitRatio = 0.8)
+
+bcsplit_train <- subset(binaryclass_df,tssplit='True')
+
+bcsplit_test <- subset(binaryclass_df,tssplit='False')
+
+#Predict 
+res.train <- predict(binaryclass.model,bcsplit_train,type ="response")
+
+res.test <- predict(binaryclass.model,bcsplit_test,type ="response")
+
+confmatrix <- table(Actual_value=bcsplit_train$label, Predicted_Value= res.train > 0.5)
+
+(confmatrix [[1,1]] + confmatrix [[2,2]])/sum(confmatrix)*100
+
+```
+
+
+#Work on Trinary Class datasets 
+
+
+```{r Trinary Dataset}
+#Split data
+
+set.seed(1234)
+
+#Get random numbers for Training Data
+size <- floor(0.7*nrow(trinaryclass_df))
+
+train_ind <- sample(seq_len(nrow(trinaryclass_df)), size = size)
+
+trsplit_train.label <- trinaryclass_df[train_ind,1 ]
+
+trsplit_test.label <- trinaryclass_df[-train_ind,1 ]
+
+trsplit_train <- trinaryclass_df_n[train_ind, ]
+
+trsplit_test <- trinaryclass_df_n[-train_ind,]
+
+trsplit_predict <- knn(train = trsplit_train,
+                       test=trsplit_test,
+                       cl=trsplit_train.label,
+                       k=round(sqrt(nrow(trsplit_train)))) # K-32 initial run 
+
+summary(trsplit_predict)
+
+
+#COnfusion Matrix
+confmatrix <- table(Actual_value=trsplit_test.label, Predicted_Value= trsplit_predict)
+
+confmatrix
+
+# Accuracy 
+(confmatrix [[1,1]] + confmatrix [[2,2]])/sum(confmatrix) * 100
+
+
+#Fit a k nearest neighbors’ model for each dataset for k=3, k=5, k=10, k=15, k=20, and k=25. Compute the accuracy of the resulting models for each value of k. Plot the results in a graph where the x-axis is the different values of k and the y-axis is the accuracy of the model.
+
+knn_val <- c(3,5,10,15,20,25)
+
+tr_knn_model <- data.frame()
+
+i=1
+
+for (kv in knn_val)
+{
+  trsplit_predict<- knn(train = trsplit_train,
+                        test=trsplit_test,
+                        cl=trsplit_train.label,
+                        k=kv)
+  
+  confmatrix <- table(Actual_value=trsplit_test.label, Predicted_Value= trsplit_predict)
+  kvaccuracy <-   100 * sum(trsplit_test.label == trsplit_predict)/NROW(trsplit_test.label)  
+  kvalue <- kv
+  tr_knn_model <- rbind(tr_knn_model, c(kvalue, kvaccuracy))
+  names(tr_knn_model) <- c("Kvalue", "Accuracy")
+}
+
+#ggplot(data=bcs_knn_model, aes(x=kvalue, y=accuracy)) + geom_point() 
+
+plot(tr_knn_model)
+
+tr_knn_model
+
+```
+
+
+#Looking back at the plots of the data, do you think a linear classifier would work well on these datasets?
+
+**I do not think that the linear classifier will work well with the Binary and Trinary dataset because the plot shows non-linearity of the data.** 
+
+#How does the accuracy of your logistic regression classifier from last week compare?  Why is the accuracy different between these two methods?
+
+**Last week, Binary dataset has lower accuracy of 58.3% compare to KNN model which resulted to higher accuracy and this is because KNN model fits the data more because of it's Non-Linearity.** 
+  
