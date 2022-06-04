@@ -1,0 +1,377 @@
+---
+title: "A look into Homelessness Data in America (Final Project Step3)"
+author: "Janine Par"
+date: '2022-06-04'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(plyr)
+library(ggplot2)
+library (lm.beta)
+library (car)
+library(dplyr)
+library(caTools)
+library(tidyverse)
+library(knitr)
+
+options(scipen=5)
+
+theme_set(theme_minimal())
+```
+
+# Introduction
+
+Homelessness is one of the social problems our nation is facing now. The pandemic, inflation, and other economic events have been contributing factors to the number of homeless Americans, which continues to increase significantly in an alarming rate. McKinney–Vento Homeless Assistance Act of 1987 defines homelessness as people lacking a fixed, regular, and adequate nighttime residence. Adults, children, families of different age and race struggle with homelessness. According to the U.S. Department of Housing and Urban Development (AHAR) about 18 of every 10,000 people in United State experience homelessness in United State. California, New York, and Florida are the top states with homeless populations however the state with the lowest homeless population is seeing an increase as well. Even before the Pandemic, Chicago sees a two percent increase over 2019. State and Federal government is allocating and spending billions of dollars to fund initiatives that aim to end and reduce homelessness. 
+
+I have started this project by identifying data requirements to analyze and understand homelessness. I have researched public information on the homeless population per state and found that counting the homeless population is a challenge because of the lack of a clear definition of homelessness and homeless people are often reluctant to be interviewed. Different approaches are identified and used to collect population data, but each method has a technical limitation. For this project, I have used the Point-in-Time (PIT) count, a count of sheltered and unsheltered people experiencing homelessness on a single night in January. It does not seem reflective of the accurate yearly scale of homelessness. Still, it's a snapshot of a number of people experiencing homelessness at a point in time, which may impact the quality of the result for this data analysis. 
+
+As I consider the homeless population as the outcome variable, I looked for factors which are commonly thought to predict the homelessness count. I have considered the following and run a correlation analysis in an attempt to measure the relationship with the homelessness population. 
+
+1. US Population by State
+1. Unemployment by State
+1. Poverty  by State
+1. Percent of Adult with Depression  by State
+1. Violence and Crime Rate
+1. Available Public support like number of bed available to shelter homelessness is effective in decreasing homeless  
+1. Weather
+1. Housing Rental Rate 
+
+
+# Problem Statement
+
+Measure the relationship of multiple variables that can impact the homeless population and identify if available public support (total number of available beds) can somehow show effectiveness when decreasing homelessness. 
+
+# Approach to Address Problem Statement
+
+1. Defining the goal of the research in which I have identified homelessness and defining variables that impacts homelessness in the United States.
+
+2. Start data gathering by identifying the type of data to collect and sources of information. 
+
+3. Data Preparation and Cleansing. I have collected public information in CVS and excel format. I have analyzed and understand the raw data and implemented R functions to:
+
+* Extract relevant information
+* Reorganize the data in accordance with my intended final dataset structure format
+* Merge multiple data frame by a common data elements: state and year 
+* Create new variables such as the Ratio of Homelessness to State population and the Mean value of housing rentals.
+
+```{r Data_Prep ,echo=FALSE,warning=FALSE, message=FALSE, warning=FALSE, results="hide" }
+
+# Not displaying result, warning, messages in PDF RMD document 
+
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+
+## Load the `PIT by State 2015-2022
+
+# Using For loop, read sheet for year I wanted to extract.
+pit_year <- c("2020","2019","2018","2017")
+
+pit_homeless_df <- data.frame()
+for (year in pit_year)
+{
+    # df_name <- paste("pit",year,"_df", sep = "") 
+    temp<- read_excel("data/homelessdata/2007-2021-PIT-Counts-by-State.xlsx", sheet =year )
+    temp["year"] <- year
+    #assign(x=df_name, value=temp) #data frame created for every PIT year
+    #rm(temp)
+    pit_homeless_df <- rbind(pit_homeless_df,temp)  
+    rm(temp) #Clean-up
+}
+
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+
+hic_year <- c("2020","2019","2018","2017")
+hic_homeless_df <- data.frame()
+
+for (year in hic_year)
+{
+  temp<- read_excel("data/homelessdata/2007-2021-HIC-Counts-by-State.xlsx", sheet =year,skip=1 )
+  temp["year"] <- year
+  hic_homeless_df <- rbind(hic_homeless_df,temp)  
+  rm(temp) #Clean-up  
+}
+
+homeless_df <- merge(pit_homeless_df, hic_homeless_df , by=c("year", "State"))
+
+homeless_df %>% select(State,year,Number_of_CoCs,Total_PIT_Homeless, Total_Age_18_to_24, Total_Under_18,Total_Over_24,Total_Female,Total_Male,
+                       Total_Transgender,Total_GenderNonConform,Total_NonHisp,Total_White,Total_Asian, Total_Hawaiian, Total_AfricanAmerican
+                       ,Total_AmericanIndian,S_ES_Multiple_Races,TOTAL_YEAR_BED, TOTAL_YEAR_BED_ES, TOTAL_YEAR_BED_TH, TOTAL_YEAR_BED_SH) -> homeless_df
+
+# Data from USFACTS 
+
+# Read US Population
+## Set the working directory to the root of your DSC 520 directory
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+
+us_pop_df<- read.csv("data/homelessdata/USPOPULATION.csv")
+colnames(us_pop_df)
+
+uspop_year <- c("2020","2019","2018","2017")
+
+us_pop_year_df <- data.frame()
+
+for (year in uspop_year)
+{
+  colyear <- paste("X",year,sep = "")
+  us_pop_df %>% select (State, colyear) -> temp
+  temp["year"] <- year
+  names(temp) <-c("State", "Population", "year") 
+  us_pop_year_df <- rbind(us_pop_year_df,temp)
+}
+
+rm(us_pop_df) #Cleanup raw data
+
+# Employment US Facts per state
+us_emp_df<- read.csv("data/homelessdata/employment_usafacts.csv")
+
+#uspop_year <- c("2020","2019","2018","2017")
+
+us_emp_year_df <- data.frame()
+
+for (year in uspop_year)
+{
+  colyear <- paste("X",year,sep = "")
+  us_emp_df %>% select (State, colyear) -> temp
+  temp["year"] <- year
+  head(temp)
+  names(temp) <-c("State", "Employment", "year") 
+  us_emp_year_df <- rbind(us_emp_year_df,temp)
+}
+
+tail(us_emp_year_df)
+rm(us_emp_df) #Cleanup Raw Data
+
+
+# Merge Variables USFACTS
+usfacts_df <- merge(us_pop_year_df,us_emp_year_df, by =c("year", "State"))
+
+# poverty US Facts per state
+us_poverty_df<- read.csv("data/homelessdata/people_in_poverty_usafacts.csv")
+
+us_poverty_year_df <- data.frame()
+
+for (year in uspop_year)
+{
+  colyear <- paste("X",year,sep = "")
+  us_poverty_df %>% select (State, colyear) -> temp
+  temp["year"] <- year
+  head(temp)
+  names(temp) <-c("State", "Poverty", "year") 
+  us_poverty_year_df <- rbind(us_poverty_year_df,temp)
+}
+
+rm(us_poverty_df) #clean up raw data
+
+usfacts_df <- merge(usfacts_df,us_poverty_year_df, by =c("year", "State"))
+
+# Depression
+us_meddepresspct_df<- read.csv("data/homelessdata/percent_of_adults_with_depression_usafacts.csv")
+
+us_meddepresspct_year_df <- data.frame()
+
+for (year in uspop_year)
+{
+  colyear <- paste("X",year,sep = "")
+  us_meddepresspct_df %>% select (State, colyear) -> temp
+  temp["year"] <- year
+  head(temp)
+  names(temp) <-c("State", "DepressPCT", "year") 
+  us_meddepresspct_year_df <- rbind(us_meddepresspct_year_df,temp)
+}
+
+rm (us_meddepresspct_df) #clean-up raw data
+
+usfacts_df <- merge(usfacts_df,us_meddepresspct_year_df, by =c("year", "State"))
+
+usfacts_df$DepressPCT <- usfacts_df$DepressPCT *100
+  
+# Violence and Crime
+us_violencecrime_df<- read.csv("data/homelessdata/violent_crimes_usafacts.csv")
+
+us_violencecrime_year_df <- data.frame()
+
+for (year in uspop_year)
+{
+  colyear <- paste("X",year,sep = "")
+  us_violencecrime_df %>% select (State, colyear) -> temp
+  temp["year"] <- year
+  head(temp)
+  names(temp) <-c("State", "CrimeViolence", "year") 
+  us_violencecrime_year_df <- rbind(us_violencecrime_year_df,temp)
+  rm(temp)
+}
+
+
+head(us_violencecrime_year_df)
+rm(us_violencecrime_df) #Cleanup raw data
+
+usfacts_df <- merge(usfacts_df,us_violencecrime_year_df, by =c("year", "State"))
+
+pop_year <- c("2020","2019","2018","2017")
+
+houserent_mean_year <- data.frame()
+
+for (year in pop_year)
+{
+  excel_name <- paste("data/homelessdata/FY",year,"_50_County_rev.xlsx", sep = "")
+  print(excel_name)
+  temp<- read_excel(excel_name)
+  temp["year"] <- year
+  temp %>% select(rent50_1, rent50_2,rent50_3,rent50_4, state_alpha, year) -> temp1
+  names(temp1) <-c("rent50_1", "rent50_2","rent50_3","rent50_4", "State", "year") 
+  houserent_mean_year <- rbind(houserent_mean_year,temp1)  
+  rm(temp) #Clean-up
+  rm(temp1) #Clean-up
+} 
+
+houserent_mean_year$ave_rent <-houserent_mean_year$rent50_1+ houserent_mean_year$rent50_2 
++ houserent_mean_year$rent50_3 + houserent_mean_year$rent50_4/4
+
+# trying other ways to pass aggregate argument: aggregate min price by sale year and zip code
+houserent_mean_year  <-  aggregate(houserent_mean_year$ave_rent,by=list(houserent_mean_year$year,houserent_mean_year$State),FUN=min, na.rm=TRUE)
+
+names(houserent_mean_year)=c("year", "State", "ave_rent")
+
+usfacts_df <- merge(usfacts_df,houserent_mean_year, by =c("year", "State"))
+
+
+# Extracted
+setwd("C:/Users/janin/OneDrive/Documents/R_repo/dsc520/")
+
+state_ave_weather_df <- read_excel("data/homelessdata/average_weather_state.xlsx")
+
+head(state_ave_weather_df)
+
+usfacts_df <- merge(usfacts_df,state_ave_weather_df, by =c("State"))
+
+us_homeless_df <- merge(homeless_df,usfacts_df, by =c("year", "State"))
+
+
+#New Variables
+us_homeless_df$homeless_pop_ratio<- us_homeless_df$Total_PIT_Homeless/us_homeless_df$Population
+
+us_homeless_df %>% filter(us_homeless_df$State %in% c('CA', 'NY', 'FL', 'TX')) ->homeless_df_topstate
+
+#homeless_df_topstate %>% select (Total_PIT_Homeless, TOTAL_YEAR_BED, Population, homeless_pop_ratio, Employment, Poverty, DepressPCT, CrimeViolence, ave_f, ave_rent) -> homeless_df_topstate
+
+
+us_homeless_df %>% select (Total_PIT_Homeless, TOTAL_YEAR_BED, Population, homeless_pop_ratio, Employment, Poverty, DepressPCT, CrimeViolence, ave_f, ave_rent) -> homeless_df_topstate
+
+
+```
+
+4. Run r code to plot the variable and see relationship with the variables in a graph.
+
+5. Run r code and perform correlation analysis for top state with homelessness: CA, TX, NY, FL
+
+```{r Correlation Analysis, echo=FALSE}
+
+cor(homeless_df_topstate, use = "complete.obs")
+
+
+
+#Perform Pearson COR test to determine correlation coefficient 
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$Population,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$TOTAL_YEAR_BED,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$Employment,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$Poverty,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$DepressPCT,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$CrimeViolence,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$ave_f,method = "pearson",  use = "complete.obs")
+
+
+cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$ave_rent,method = "pearson",  use = "complete.obs")
+
+```
+
+6. Attempt to implement a simple linear regression if the total available beds 
+
+```{R Simple Linear Regression , echo=FALSE}
+
+homelesspopUsfact_r <- lm(Total_PIT_Homeless ~ TOTAL_YEAR_BED,  data=homeless_df_topstate)
+
+summary (homelesspopUsfact_r)
+```
+
+# Analysis.
+
+The following are the pearson correlation coefficient result that shows positive association between these variables and the PIT Homeless population which means that increase on these variables have impact to increasing homeless population
+
+1. Population with r= 0.8188518
+2. Unemployment Rate= 0.8320909
+3. Poverty = 0.792723
+4. Crime and Violence = 0.8125345
+5. Average weather temperature =0.13306
+
+Interestingly, these variables resulted to pearson correlation coefficient that shows negative association between these variables and the PIT Homeless population which means that increase on these variables have impact to decreasing homeless population which I think result is unexpected as these are known factors that impacts homeless population in a state. I think it may be related to the quality and coverage of data collected for this project which I will address in the limitation section: 
+
+5. Average Rent =  -0.0218517
+6. Percent of Adult with Depression  by State -0.2962761 
+
+
+# Implications. 
+
+In this project, I have used public downloadable US Fact information and analyzed the correlation of these factors to homelessness though some results are not as expected, and maybe due to the quality of the data downloaded, this exercise shows how data science and technology can be used to guide the government in making informed decisions that can use to fight the homelessness crisis. 
+
+This study implicates that a solid process and methodology must be applied to collect, transform and study  the data to understand what model best fits into building a good data-driven solutions for solving homelessness similar to these recommendations: 
+
+* Linear regression model to estimate the relationship of multiple predictors to the homeless population such as increasing city population, high rate of health and substance use problems, unemployment rate, housing cost, etc.  
+
+* Logistic regression for predicting what solution may work or not work for known cases of homelessness in the city. 
+
+* k-Nearest-Neighbors (k-NN) model for predicting whether a person is at risk of homelessness or becoming a chronic homeless. The prediction can be based on the person's demographic, health, and administrative information.  
+
+# Limitations.
+
+1. I'm limited to downloadable public information from the internet on homelessness. This analysis can be improved if more detailed raw information on homelessness is captured and available such as:
+- Homeless demographic information
+- HUD Administrative information on the sheltered homeless person
+- Population on homelessness by state and year. The only available for me to use is a snapshot point in time.
+
+2. US Fact information
+- Scope and Data Granularity where some data are only available for a specific year or aggregated at the country level as supposed to state level.
+- Inconsistent formatting will require more time to transform like state can either be name, code, or spelled differently. 
+- Variables that I have chosen for this project are continuous  though they came with different scales, which could be a problem when comparing (i.e., Depression is PCT while others are numerical count or captured rating)
+- Missing and Duplicate Data
+
+Correlation analysis of the homeless population with Depression pct and Average rental rate has resulted in a negative correlation coefficient, which was unexpected for me as these two variables are known factors to the growth of the homelessness population. This shows that data accuracy is very important because when data is insufficient, it can lead to faulty predictions and bad outcomes. The closer the data to reality or normalcy, our analysis and prediction will result to higher accuracy. 
+
+
+# Concluding Remarks
+
+This project has allowed me to apply what I have learned from this course and have a hands-on experience using a real-life use case:
+
+1. Apply R packages, libraries, and functions to extract and transform data from multiple sources to build datasets needed for the analysis
+1. Practice step by step methodology from data gathering, transformation and statistical test and analysis, such as correlation analysis and simple linear regression
+1. Present results using different techniques such as plotting diagrams and building R Markdown
+
+
+# References
+
+2021 ahar: Part 1 - pit estimates of homelessness in the U.S. 2021 AHAR: Part 1 - PIT Estimates of Homelessness in the U.S. | HUD USER. (n.d.). Retrieved May 15, 2022, from https://www.huduser.gov/portal/datasets/ahar/2021-ahar-part-1-pit-estimates-of-homelessness-in-the-us.html 
+
+
+USAFacts. (n.d.). Homeless population. USAFacts. Retrieved May 15, 2022, from https://usafacts.org/data/topics/people-society/poverty/public-housing/homeless-population/?utm_source=bing&utm_medium=cpc&utm_campaign=ND-StatsData&msclkid=a229785546631d9d16451ad4d1a50df6 
+
+COC housing inventory count reports. HUD Exchange. (n.d.). Retrieved May 15, 2022, from https://www.hudexchange.info/programs/coc/coc-housing-inventory-count-reports/ 
+
+Publisher data.cityofnewyork.us. (2022, May 12). DHS Daily Report. DHS Daily Report - CKAN. Retrieved May 15, 2022, from https://catalog.data.gov/dataset/dhs-daily-report 
+
+System performance measures. HUD Exchange. (n.d.). Retrieved May 15, 2022, from https://www.hudexchange.info/programs/coc/system-performance-measures/#data 
+
+https://www.ncbi.nlm.nih.gov/books/NBK218229/
