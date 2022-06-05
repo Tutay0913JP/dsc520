@@ -46,7 +46,7 @@ Measure the relationship of multiple variables that can impact the homeless popu
 
 # Approach to Address Problem Statement
 
-1. Defining the goal of the research in which I have identified homelessness and defining variables that impacts homelessness in the United States.
+1. Defining the topic of the research in which I have identified homelessness and defining variables that impacts homelessness in the United States.
 
 2. Start data gathering by identifying the type of data to collect and sources of information. 
 
@@ -299,7 +299,7 @@ cor.test(homeless_df_topstate$Total_PIT_Homeless, homeless_df_topstate$ave_rent,
 
 ```
 
-6. Attempt to implement a simple linear regression if the total available beds 
+6. Attempt to implement a simple linear regression for the total available beds 
 
 ```{R Simple Linear Regression , echo=FALSE}
 
